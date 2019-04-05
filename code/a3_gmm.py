@@ -25,10 +25,10 @@ def precomputeStep(m, myTheta):
 
     result = 0
 
-    result += reduce(lambda x, y: x + y, list(map(lambda n: pow(mu[n], 2) / (2 * pow(sigma[n], 2)), range(d))))
+    result += np.sum(np.divide(np.power(mu, 2), 2 * np.power(sigma, 2)))
     result += d / 2 * np.log(2 * np.pi)
-
     result += 1 / 2 * np.log(np.prod(np.power(sigma, 2)))
+
     return -result
 
 
@@ -46,17 +46,15 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
 
     result = 0
 
-    for n in range(len(x)):
-        result -= 1 / 2 * pow(x[n], 2) * pow(sigma[n], -2)
-        result += mu[n] * x[n] * pow(sigma[n], -2)
+    first = 1 / 2 * np.multiply(np.power(x, 2), np.power(sigma, -2))
+    second = np.multiply(np.multiply(mu, x), np.power(sigma, -2))
 
-        if len(preComputedForM) < 1:
-            result -= pow(mu[n], 2) / (2 * pow(sigma[n], 2))
+    result -= np.sum(np.subtract(first, second))
 
     if len(preComputedForM) < 1:
-        result + precomputeStep(m, myTheta)
+        result += precomputeStep(m, myTheta)
     else:
-        result + preComputedForM[m]
+        result += preComputedForM[m]
 
     return result
 
@@ -159,7 +157,6 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         improvement = L - pre_L
         pre_L = L
         i = i + 1
-
 
     return myTheta
 
