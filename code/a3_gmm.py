@@ -25,9 +25,9 @@ def precomputeStep(m, myTheta):
 
     result = 0
 
-    result += np.sum(np.divide(np.power(mu, 2), 2 * np.power(sigma, 2)))
+    result += np.sum(np.divide(np.power(mu, 2), 2 * sigma))
     result += d / 2 * np.log(2 * np.pi)
-    result += 1 / 2 * np.log(np.prod(np.power(sigma, 2)))
+    result += 1 / 2 * np.log(np.prod(sigma))
 
     return -result
 
@@ -44,12 +44,10 @@ def log_b_m_x(m, x, myTheta, preComputedForM=[]):
     sigma = myTheta.Sigma[m]
     mu = myTheta.mu[m]
 
-    result = 0
+    first = 1 / 2 * np.multiply(np.power(x, 2), sigma)
+    second = np.divide(np.multiply(mu, x), sigma)
 
-    first = 1 / 2 * np.multiply(np.power(x, 2), np.power(sigma, -2))
-    second = np.multiply(np.multiply(mu, x), np.power(sigma, -2))
-
-    result -= np.sum(np.subtract(first, second))
+    result = - np.sum(np.subtract(first, second))
 
     if len(preComputedForM) < 1:
         result += precomputeStep(m, myTheta)
@@ -89,24 +87,7 @@ def logLik(log_Bs, myTheta):
         See equation 3 of the handout
     '''
 
-    result = 0
-    for t in range(log_Bs.shape[1]):
-        result += logsumexp(np.log(myTheta.omega.transpose()) + log_Bs[:, t])
-
-    return result
-
-
-def compute_P(X, log_Bs, myTheta):
-    log_Ps = np.zeros((M, len(X)))
-    omega = myTheta.omega
-
-    for t in range(len(X)):
-        sum = logsumexp(list(map(lambda m: np.log(omega[m, 0]) + log_Bs[m, t], range(M))))
-
-        for m in range(len(omega)):
-            log_Ps[m, t] = np.log(omega[m, 0]) + log_Bs[m, t] - sum
-
-    return log_Ps
+    return np.sum(logsumexp(log_Bs + np.log(myTheta.omega), axis=0))
 
 
 def compute_B(X, myTheta):
@@ -115,8 +96,9 @@ def compute_B(X, myTheta):
     preComputedForM = list(map(lambda x: precomputeStep(x, myTheta), range(M)))
 
     for m in range(M):
-        for t in range(len(X)):
-            log_Bs[m, t] = log_b_m_x(m, X[t], myTheta, preComputedForM)
+        log_Bs[m] = - 0.5 * np.matmul(1.0 / myTheta.Sigma[m], np.square(X).transpose())
+        log_Bs[m] += np.matmul((myTheta.mu[m] / myTheta.Sigma[m]), X.transpose())
+        log_Bs[m] += preComputedForM[m]
 
     return log_Bs
 
@@ -136,11 +118,13 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
         myTheta.Sigma[m] = np.ones((len(myTheta.Sigma[m])))
         myTheta.omega[m] = [1 / M]
 
-    while i <= maxIter and improvement >= epsilon:
-        print('iteration ' + str(i))
+    while i < maxIter and improvement >= epsilon:
 
+        # using vectorized computation to faster testing
         log_Bs = compute_B(X, myTheta)
-        log_Ps = compute_P(X, log_Bs, myTheta)
+
+        weighted_Bs = np.add(np.log(myTheta.omega), log_Bs)
+        log_Ps = weighted_Bs - logsumexp(weighted_Bs, axis=0)
 
         L = logLik(log_Bs, myTheta)
 
@@ -148,8 +132,8 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             sum_Ps = np.exp(logsumexp(log_Ps[m]))
 
             myTheta.omega[m, 0] = sum_Ps / T
-            myTheta.mu[m] = np.divide(np.dot(log_Ps[m], X), sum_Ps)
-            myTheta.Sigma[m] = np.divide(np.dot(log_Ps[m], np.square(X)), sum_Ps) - np.square(myTheta.mu[m])
+            myTheta.mu[m] = np.divide(np.dot(np.exp(log_Ps[m]), X), sum_Ps)
+            myTheta.Sigma[m] = np.divide(np.dot(np.exp(log_Ps[m]), np.square(X)), sum_Ps) - np.square(myTheta.mu[m])
 
         improvement = L - pre_L
         pre_L = L
@@ -182,7 +166,7 @@ def test(mfcc, correctID, models, k=5):
 
     f = open("gmmLiks.txt", 'a')
 
-    f.write(f"[{correctID}] \n")
+    f.write(f"[{models[correctID].name}] \n")
 
     for logLike in logLikes[:k]:
         f.write(f"[{models[logLike[0]].name}] [{logLike[1]}] \n")
@@ -196,16 +180,25 @@ if __name__ == "__main__":
 
     trainThetas = []
     testMFCCs = []
-    print('TODO: you will need to modify this main block for Sec 2.3')
+
     d = 13
     k = 5  # number of top speakers to display, <= 0 if none
     M = 8
     epsilon = 0.0
     maxIter = 20
+    S = 32
+
+    speaker_count = 0
     # train a model for each speaker, and reserve data for testing
     for subdir, dirs, files in os.walk(dataDir):
         for speaker in dirs:
+
+            if speaker_count >= S:
+                break
+
             print(speaker)
+
+            speaker_count += 1
 
             files = fnmatch.filter(os.listdir(os.path.join(dataDir, speaker)), '*npy')
             random.shuffle(files)
@@ -225,7 +218,9 @@ if __name__ == "__main__":
     f = open("gmmLiks.txt", 'w+')
     f.close()
 
-    numCorrect = 0;
+    numCorrect = 0
     for i in range(0, len(testMFCCs)):
         numCorrect += test(testMFCCs[i], i, trainThetas, k)
     accuracy = 1.0 * numCorrect / len(testMFCCs)
+
+    print('S is ' + str(S) + ' M is ' + str(M) + ' MaxIter is ' + str(maxIter) + ' Accuracy is ' + str(accuracy))

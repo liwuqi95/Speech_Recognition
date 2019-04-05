@@ -1,0 +1,48 @@
+
+######## Experiments about different M, everything else is default:
+
+M is 8 MaxIter is 20 Accuracy is 1.0
+M is 6 MaxIter is 20 Accuracy is 1.0
+M is 4 MaxIter is 20 Accuracy is 1.0
+M is 2 MaxIter is 20 Accuracy is 1.0
+
+Cannot find any conclusion from above, therefore, decrease maxIter to 1
+
+M is 8 MaxIter is 1 Accuracy is 1.0
+M is 6 MaxIter is 1 Accuracy is 0.9375
+M is 4 MaxIter is 1 Accuracy is 0.90625
+M is 2 MaxIter is 1 Accuracy is 0.75
+
+As we can see from the data, as M decrease, the accuracy decreases.
+As we increase the model number, we have more complex model that can handle more situations, therefore, the accuracy increase.
+
+########  Experiments about different MaxIter, everything else is default:
+
+M is 8 MaxIter is 20 Accuracy is 1.0
+M is 8 MaxIter is 10 Accuracy is 1.0
+M is 8 MaxIter is 5 Accuracy is 1.0
+M is 8 MaxIter is 1 Accuracy is 1.0
+
+Cannot find any conclusion from above, therefore, decrease maxIter to 1
+
+M is 2 MaxIter is 20 Accuracy is 1.0
+M is 2 MaxIter is 10 Accuracy is 0.96875
+M is 2 MaxIter is 5 Accuracy is 0.90625
+M is 2 MaxIter is 1 Accuracy is 0.625
+
+As we can see from the data, as maxIter decrease, the accuracy decreases.
+As the number of iteration decrease, the model is trained with less effort, therefore, the accuracy would go down.
+
+########  Experiments about different S, everything else is default:
+
+S is 32 M is 2 MaxIter is 1 Accuracy is 0.5625
+S is 16 M is 2 MaxIter is 1 Accuracy is 0.8125
+S is 10 M is 2 MaxIter is 1 Accuracy is 0.9
+
+As we can see from the data, as S decrease, the accuracy increase.
+As the number of speakers increase, the difficulty also increase, therefore, the accuracy decrease.
+
+
+1. We can have more complex models to train with more iterations. (Increase both M and maxIter).
+2. If the logLik for given utterance is very low for all the models, then it may not exist in training sets.
+3. we can parse the data and generate a bunch of features and use neural networks to train a model. After that we may able to identify a given speaker.
