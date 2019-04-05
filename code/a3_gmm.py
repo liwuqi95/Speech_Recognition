@@ -89,12 +89,9 @@ def logLik(log_Bs, myTheta):
         See equation 3 of the handout
     '''
 
-    omega = myTheta.omega
-
     result = 0
-
     for t in range(log_Bs.shape[1]):
-        result += logsumexp(list(map(lambda a: np.log(omega[a, 0]) + log_Bs[a, t], range(log_Bs.shape[0]))))
+        result += logsumexp(np.log(myTheta.omega.transpose()) + log_Bs[:, t])
 
     return result
 
