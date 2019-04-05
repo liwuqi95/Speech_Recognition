@@ -27,8 +27,8 @@ def precomputeStep(m, myTheta):
 
     result += reduce(lambda x, y: x + y, list(map(lambda n: pow(mu[n], 2) / (2 * pow(sigma[n], 2)), range(d))))
     result += d / 2 * np.log(2 * np.pi)
-    result += 1 / 2 * np.log(reduce(lambda x, y: x * y, list(map(lambda x: pow(sigma[x], 2), range(d)))))
 
+    result += 1 / 2 * np.log(np.prod(np.power(sigma, 2)))
     return -result
 
 
@@ -105,8 +105,6 @@ def compute_P(X, log_Bs, myTheta):
     log_Ps = np.zeros((M, len(X)))
     omega = myTheta.omega
 
-    print(omega)
-
     for t in range(len(X)):
         sum = logsumexp(list(map(lambda m: np.log(omega[m, 0]) + log_Bs[m, t], range(M))))
 
@@ -158,9 +156,10 @@ def train(speaker, X, M=8, epsilon=0.0, maxIter=20):
             myTheta.mu[m] = np.divide(np.dot(log_Ps[m], X), sum_Ps)
             myTheta.Sigma[m] = np.divide(np.dot(log_Ps[m], np.square(X)), sum_Ps) - np.square(myTheta.mu[m])
 
-            improvement = L - pre_L
-            pre_L = L
-            i = i + 1
+        improvement = L - pre_L
+        pre_L = L
+        i = i + 1
+
 
     return myTheta
 
@@ -178,19 +177,23 @@ def test(mfcc, correctID, models, k=5):
                S-5A -9.21034037197
         the format of the log likelihood (number of decimal places, or exponent) does not matter
     '''
-    bestModel = -1
 
-    logLikelihood = float('-inf')
+    logLikes = []
 
     for i in range(len(models)):
         log_Bs = compute_B(mfcc, models[i])
+        logLikes.append((i, logLik(log_Bs, models[i])))
 
-        log_Like = logLik(log_Bs, models[i])
+    logLikes.sort(key=lambda x: x[1], reverse=True)
 
-        if logLikelihood < log_Like:
-            bestModel = i
-            logLikelihood = log_Like
+    f = open("gmmLiks.txt", 'a')
 
+    f.write(f"[{correctID}] \n")
+
+    for logLike in logLikes[:k]:
+        f.write(f"[{models[logLike[0]].name}] [{logLike[1]}] \n")
+
+    bestModel = logLikes[0][0] if len(logLikes) > 0 else -1
 
     return 1 if (bestModel == correctID) else 0
 
@@ -223,7 +226,11 @@ if __name__ == "__main__":
 
             trainThetas.append(train(speaker, X, M, epsilon, maxIter))
 
-    # evaluate 
+    # evaluate
+
+    f = open("gmmLiks.txt", 'w+')
+    f.close()
+
     numCorrect = 0;
     for i in range(0, len(testMFCCs)):
         numCorrect += test(testMFCCs[i], i, trainThetas, k)

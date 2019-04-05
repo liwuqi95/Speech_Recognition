@@ -107,8 +107,6 @@ if __name__ == "__main__":
             file_google = open(dataDir + speaker + '/transcripts.Google.txt', "r")
             file_kaldi = open(dataDir + speaker + '/transcripts.Kaldi.txt', "r")
 
-            print(speaker)
-
             lines = []
             reference = []
             for line in file:
