@@ -43,6 +43,13 @@ As we can see from the data, as S decrease, the accuracy increase.
 As the number of speakers increase, the difficulty also increase, therefore, the accuracy decrease.
 
 
+########  Experiments with different omega initialization:
+Using maxIter = 1 to see the difference.
+
+omega inited to be random produce higher accuracy than omega to be average value.
+The random omega produce higher converge rate, therefore, we can notice the different with maxIter to be 1
+
+###############
 1. We can have more complex models to train with more iterations. (Increase both M and maxIter).
 2. If the logLik for given utterance is very low for all the models, then it may not exist in training sets.
 3. we can parse the data and generate a bunch of features and use neural networks to train a model. After that we may able to identify a given speaker.

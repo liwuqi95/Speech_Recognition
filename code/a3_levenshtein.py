@@ -3,8 +3,8 @@ import re
 import string
 import numpy as np
 
-# dataDir = '/u/cs401/A3/data/'
-dataDir = '../data/'
+dataDir = '/u/cs401/A3/data/'
+# dataDir = '../data/'
 
 
 def Levenshtein(r, h):

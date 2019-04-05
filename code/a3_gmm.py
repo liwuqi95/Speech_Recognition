@@ -1,12 +1,13 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 import os, fnmatch
-from functools import reduce
 import random
 from scipy.special import logsumexp
 
-# dataDir = '/u/cs401/A3/data/'
-dataDir = '../data/'
+dataDir = '/u/cs401/A3/data/'
+
+
+# dataDir = '../data/'
 
 
 class theta:
